@@ -1,9 +1,6 @@
 use std::ops::Range;
-use crate::{
-    egui_node::EguiPipeline, EguiContext, EguiManagedTextures, EguiRenderOutput, EguiSettings,
-    WindowSize,
-};
-use bevy::{asset::HandleId, log, prelude::*, render::{
+use crate::{egui_node::EguiPipeline, EguiContext, EguiManagedTextures, EguiRenderOutput, EguiSettings, GifAnimation, WindowSize};
+use bevy::{asset::HandleId, prelude::*, render::{
     render_asset::RenderAssets,
     render_resource::{
         std140::AsStd140, BindGroup, BindGroupDescriptor, BindGroupEntry, BindingResource,
@@ -12,7 +9,6 @@ use bevy::{asset::HandleId, log, prelude::*, render::{
     renderer::{RenderDevice, RenderQueue},
     texture::Image,
 }, utils::HashMap, window::WindowId};
-use bevy_gif::GifAnimation;
 
 pub(crate) struct ExtractedRenderOutput(pub HashMap<WindowId, EguiRenderOutput>);
 pub(crate) struct ExtractedWindowSizes(pub HashMap<WindowId, WindowSize>);

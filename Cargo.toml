@@ -21,7 +21,7 @@ open_url = ["webbrowser"]
 
 [dependencies]
 bevy = { version = "0.7", default-features = false, features = ["bevy_render", "bevy_core_pipeline"] }
-bevy_gif = {path = "../ableMMO/bevy_gif"}
+image = { version = "0.24", features = ["gif"], default-features=false}
 egui = { version = "0.18", features = ["bytemuck"] }
 webbrowser = { version = "0.7", optional = true }
 

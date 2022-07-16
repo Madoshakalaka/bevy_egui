@@ -55,6 +55,8 @@ pub use egui;
 mod egui_node;
 mod render_systems;
 mod systems;
+/// allows to play gif animation
+pub mod gif;
 
 use egui_node::EguiNode;
 use render_systems::EguiTransforms;
@@ -79,9 +81,9 @@ use bevy::{
 #[cfg(all(feature = "manage_clipboard", not(target_arch = "wasm32")))]
 use std::cell::{RefCell, RefMut};
 use std::ops::Range;
-use bevy_gif::GifAnimation;
 #[cfg(all(feature = "manage_clipboard", not(target_arch = "wasm32")))]
 use thread_local::ThreadLocal;
+use crate::gif::GifAnimation;
 
 /// Adds all Egui resources and render graph nodes.
 pub struct EguiPlugin;
@@ -355,7 +357,7 @@ impl EguiContext {
 
             self.last_texture_id += frame_count;
 
-            (self.last_texture_id - frame_count ..self.last_texture_id)
+            self.last_texture_id - frame_count ..self.last_texture_id
         }).clone().map(|x|{
             // log::debug! ("hewwo: {x}");
             egui::TextureId::User(x)
