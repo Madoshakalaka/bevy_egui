@@ -78,6 +78,8 @@ use bevy::{
 };
 #[cfg(all(feature = "manage_clipboard", not(target_arch = "wasm32")))]
 use std::cell::{RefCell, RefMut};
+use std::ops::Range;
+use bevy_gif::GifAnimation;
 #[cfg(all(feature = "manage_clipboard", not(target_arch = "wasm32")))]
 use thread_local::ThreadLocal;
 
@@ -222,15 +224,18 @@ pub struct EguiOutput {
 pub struct EguiContext {
     ctx: HashMap<WindowId, egui::Context>,
     user_textures: HashMap<HandleId, u64>,
+    user_animations: HashMap<HandleId, Range<u64>>,
     last_texture_id: u64,
     mouse_position: Option<(WindowId, egui::Vec2)>,
 }
+
 
 impl EguiContext {
     fn new() -> Self {
         Self {
             ctx: HashMap::default(),
             user_textures: Default::default(),
+            user_animations: Default::default(),
             last_texture_id: 0,
             mouse_position: None,
         }
@@ -339,6 +344,23 @@ impl EguiContext {
             ids
         );
         ids.map(|id| self.ctx.get(&id))
+    }
+
+
+    /// similar to [Self::add_image] but adds each frame of a gif.
+    pub fn add_gif_animation(&mut self, animation: Handle<GifAnimation>, frame_count: u64) -> Vec<egui::TextureId>{
+        assert!(animation.is_strong()); // because gif animation can only be used inside egui
+
+        self.user_animations.entry(animation.id).or_insert_with(|| {
+
+            self.last_texture_id += frame_count;
+
+            (self.last_texture_id - frame_count ..self.last_texture_id)
+        }).clone().map(|x|{
+            // log::debug! ("hewwo: {x}");
+            egui::TextureId::User(x)
+        })
+            .collect()
     }
 
     /// Can accept either a strong or a weak handle.

@@ -1,22 +1,18 @@
+use std::ops::Range;
 use crate::{
     egui_node::EguiPipeline, EguiContext, EguiManagedTextures, EguiRenderOutput, EguiSettings,
     WindowSize,
 };
-use bevy::{
-    asset::HandleId,
-    prelude::*,
-    render::{
-        render_asset::RenderAssets,
-        render_resource::{
-            std140::AsStd140, BindGroup, BindGroupDescriptor, BindGroupEntry, BindingResource,
-            BufferId, DynamicUniformVec,
-        },
-        renderer::{RenderDevice, RenderQueue},
-        texture::Image,
+use bevy::{asset::HandleId, log, prelude::*, render::{
+    render_asset::RenderAssets,
+    render_resource::{
+        std140::AsStd140, BindGroup, BindGroupDescriptor, BindGroupEntry, BindingResource,
+        BufferId, DynamicUniformVec,
     },
-    utils::HashMap,
-    window::WindowId,
-};
+    renderer::{RenderDevice, RenderQueue},
+    texture::Image,
+}, utils::HashMap, window::WindowId};
+use bevy_gif::GifAnimation;
 
 pub(crate) struct ExtractedRenderOutput(pub HashMap<WindowId, EguiRenderOutput>);
 pub(crate) struct ExtractedWindowSizes(pub HashMap<WindowId, WindowSize>);
@@ -34,10 +30,11 @@ pub(crate) enum EguiTexture {
 pub(crate) struct ExtractedEguiTextures {
     pub(crate) egui_textures: HashMap<(WindowId, u64), Handle<Image>>,
     pub(crate) user_textures: HashMap<HandleId, u64>,
+    pub(crate) user_animations: HashMap<HandleId, Range<u64>>,
 }
 
 impl ExtractedEguiTextures {
-    pub(crate) fn handles(&self) -> impl Iterator<Item = (EguiTexture, HandleId)> + '_ {
+    pub(crate) fn image_handles(&self) -> impl Iterator<Item = (EguiTexture, HandleId)> + '_ {
         self.egui_textures
             .iter()
             .map(|(&(window, texture_id), handle)| {
@@ -48,6 +45,22 @@ impl ExtractedEguiTextures {
                     .iter()
                     .map(|(handle, id)| (EguiTexture::User(*id), *handle)),
             )
+    }
+    pub(crate) fn animation_handles(&self) -> impl Iterator<Item = (impl Iterator<Item = EguiTexture>, HandleId)> + '_ {
+        self.user_animations
+            .iter()
+            .map(|(handle, ids)| {
+
+                // log::debug!("{ids:?}");
+
+                (ids.clone().map(|id| {
+                    // log::debug!("{id:?}");
+
+
+
+                    EguiTexture::User(id)
+                }), *handle)
+            })
     }
 }
 
@@ -79,6 +92,7 @@ pub(crate) fn extract_egui_textures(
             })
             .collect(),
         user_textures: egui_context.user_textures.clone(),
+        user_animations: egui_context.user_animations.clone()
     });
 }
 
@@ -156,30 +170,53 @@ pub(crate) fn queue_bind_groups(
     mut commands: Commands,
     egui_textures: Res<ExtractedEguiTextures>,
     render_device: Res<RenderDevice>,
-    gpu_images: Res<RenderAssets<Image>>,
+    image_assets: Res<RenderAssets<Image>>,
+    animation_assets: Res<RenderAssets<GifAnimation>>,
     egui_pipeline: Res<EguiPipeline>,
 ) {
-    let bind_groups = egui_textures
-        .handles()
-        .filter_map(|(texture, handle_id)| {
-            let gpu_image = gpu_images.get(&Handle::weak(handle_id))?;
-            let bind_group = render_device.create_bind_group(&BindGroupDescriptor {
-                label: None,
-                layout: &egui_pipeline.texture_bind_group_layout,
-                entries: &[
-                    BindGroupEntry {
-                        binding: 0,
-                        resource: BindingResource::TextureView(&gpu_image.texture_view),
-                    },
-                    BindGroupEntry {
-                        binding: 1,
-                        resource: BindingResource::Sampler(&gpu_image.sampler),
-                    },
-                ],
-            });
-            Some((texture, bind_group))
-        })
-        .collect();
+
+   let bind_groups = egui_textures
+       .animation_handles()
+       .filter_map(|(textures, handle_id)|{
+
+
+           let images = animation_assets.get(
+            &Handle::weak(handle_id))?;
+
+        Some(textures.zip(images))
+
+       }
+
+   )
+       .flatten()
+       .chain(
+           egui_textures
+               .image_handles()
+               .filter_map(|(texture, handle_id)| {
+                   Some((texture, image_assets.get(&Handle::weak(handle_id))?))
+               })
+       )
+       .map(
+           |(texture, gpu_image)| {
+
+               let bind_group = render_device.create_bind_group(&BindGroupDescriptor {
+                   label: None,
+                   layout: &egui_pipeline.texture_bind_group_layout,
+                   entries: &[
+                       BindGroupEntry {
+                           binding: 0,
+                           resource: BindingResource::TextureView(&gpu_image.texture_view),
+                       },
+                       BindGroupEntry {
+                           binding: 1,
+                           resource: BindingResource::Sampler(&gpu_image.sampler),
+                       },
+                   ],
+               });
+               (texture, bind_group)
+           }
+
+       ).collect();
 
     commands.insert_resource(EguiTextureBindGroups { bind_groups })
 }
