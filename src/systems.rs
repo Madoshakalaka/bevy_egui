@@ -343,7 +343,7 @@ pub fn process_output(
             platform_output,
             shapes,
             textures_delta,
-            repaint_after,
+            needs_repaint,
         } = full_output;
 
         let egui_render_output = egui_render_output.entry(*window_id).or_default();
@@ -366,8 +366,7 @@ pub fn process_output(
             }
         }
 
-        // todo: handle repaint correctly
-        if repaint_after.is_zero() {
+        if needs_repaint {
             event.send(RequestRedraw)
         }
 
