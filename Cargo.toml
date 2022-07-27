@@ -15,6 +15,7 @@ all-features = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = ["manage_clipboard", "open_url"]
+egui_serde = ["egui/serde"]
 immutable_ctx = []
 manage_clipboard = ["arboard", "thread_local"]
 open_url = ["webbrowser"]
