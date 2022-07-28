@@ -1,8 +1,5 @@
 use std::ops::Range;
-use crate::{
-    egui_node::EguiPipeline, EguiContext, EguiManagedTextures, EguiRenderOutput, EguiSettings,
-    WindowSize,
-};
+use crate::{egui_node::EguiPipeline, EguiContext, EguiManagedTextures, EguiRenderOutput, EguiSettings, GifAnimation, WindowSize};
 use bevy::{
     asset::HandleId,
     prelude::*,

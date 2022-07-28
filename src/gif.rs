@@ -1,6 +1,6 @@
 use bevy::ecs::system::lifetimeless::SRes;
 use bevy::ecs::system::SystemParamItem;
-use bevy::math::Size;
+use bevy::math::Vec2;
 use bevy::reflect::TypeUuid;
 use bevy::render::render_asset::{PrepareAssetError, RenderAsset};
 use bevy::render::render_resource::{Extent3d, ImageCopyTexture, ImageDataLayout, Origin3d, SamplerDescriptor, TextureAspect, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor};
@@ -94,7 +94,7 @@ impl RenderAsset for GifAnimation {
                 );
 
                 let texture_view = texture.create_view(&TextureViewDescriptor::default());
-                let size = Size::new(
+                let size = Vec2::new(
                     animation.texture_descriptor.size.width as f32,
                     animation.texture_descriptor.size.height as f32,
                 );
